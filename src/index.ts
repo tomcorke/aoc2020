@@ -1,6 +1,6 @@
 import { performance } from "perf_hooks";
 
-type Answer = string | number;
+type Answer = string | number | number[];
 type AsyncAnswer = Promise<Answer>;
 export type Solution = {
   (): Answer | AsyncAnswer;
