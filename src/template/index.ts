@@ -1,7 +1,7 @@
 import { readFileSeparated, toNumber } from "../helpers";
 import { Solution } from "..";
 
-const getInput = readFileSeparated(",", "xx", "input").then(values =>
+const getInput = readFileSeparated(",", "xx", "input").then((values) =>
   values.map(toNumber)
 );
 
@@ -11,8 +11,8 @@ const solution: Solution = async () => {
   return NaN;
 };
 
-const test = async <T>(
-  pendingInput: typeof getInput,
+const test = async <I, T>(
+  pendingInput: I[] | Promise<I[]>,
   expectedResult: T
 ): Promise<void> => {
   const input = await pendingInput;
