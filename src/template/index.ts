@@ -5,12 +5,6 @@ const getInput = readFileSeparated(",", "xx", "input").then((values) =>
   values.map(toNumber)
 );
 
-const solution: Solution = async () => {
-  const input = await getInput;
-
-  return NaN;
-};
-
 const test = async <I, T>(
   pendingInput: I[] | Promise<I[]>,
   expectedResult: T
@@ -22,6 +16,12 @@ const test = async <I, T>(
       `Test failed, expected result ${expectedResult}, actual result ${actual}`
     );
   }
+};
+
+const solution: Solution = async () => {
+  const input = await getInput;
+
+  return NaN;
 };
 
 solution.tests = async () => {
