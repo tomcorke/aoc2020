@@ -5,12 +5,9 @@ const getInput = readFileSeparated(",", "xx", "input").then((values) =>
   values.map(toNumber)
 );
 
-const test = async <I, T>(
-  pendingInput: I[] | Promise<I[]>,
-  expectedResult: T
-): Promise<void> => {
+const test = async (pendingInput: any, expectedResult: any): Promise<void> => {
   const input = await pendingInput;
-  const actual: T = 123 as any;
+  const actual = 123 as any;
   if (actual !== expectedResult) {
     throw Error(
       `Test failed, expected result ${expectedResult}, actual result ${actual}`
