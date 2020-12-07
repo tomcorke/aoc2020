@@ -1,8 +1,8 @@
 import { readFileSeparated, toNumber } from "../helpers";
 import { Solution } from "..";
 
-const getInput = readFileSeparated(",", "xx", "input").then((values) =>
-  values.map(toNumber)
+const getInput = readFileSeparated("\n", "xx", "input").then(
+  (values) => values
 );
 
 const expect = async <T>(
