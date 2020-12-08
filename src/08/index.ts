@@ -1,10 +1,26 @@
 import { readFileSeparated, toNumber } from "../helpers";
 import { Solution } from "..";
 
-const getInput = readFileSeparated("\n", "08", "input");
-const getInputFixed = readFileSeparated("\n", "08", "input-fixed");
-const getTestInput = readFileSeparated("\n", "08", "input-test");
-const getTestInput2 = readFileSeparated("\n", "08", "input-test-2");
+interface Command {
+  cmd: string;
+  value: number;
+}
+
+const parse = (commands: string[]): Command[] => {
+  return commands.map((command) => {
+    const [cmd, valueString] = command.split(" ");
+    let value = parseInt(valueString.substr(1));
+    if (valueString.substr(0, 1) === "-") {
+      value = 0 - value;
+    }
+    return { cmd, value };
+  });
+};
+
+const getInput = readFileSeparated("\n", "08", "input").then(parse);
+const getInputFixed = readFileSeparated("\n", "08", "input-fixed").then(parse);
+const getTestInput = readFileSeparated("\n", "08", "input-test").then(parse);
+const getTestInput2 = readFileSeparated("\n", "08", "input-test-2").then(parse);
 
 const expect = async <T>(
   test: () => T | Promise<T>,
@@ -18,16 +34,7 @@ const expect = async <T>(
   }
 };
 
-const runCommand = (
-  [cmd, valueString]: [string, string],
-  pointer: number,
-  acc: number
-) => {
-  let value = parseInt(valueString.substr(1));
-  if (valueString.substr(0, 1) === "-") {
-    value = 0 - value;
-  }
-
+const runCommand = ({ cmd, value }: Command, pointer: number, acc: number) => {
   switch (cmd) {
     case "nop":
       return [pointer + 1, acc];
@@ -40,8 +47,7 @@ const runCommand = (
   }
 };
 
-const process = (input: string[]) => {
-  const commands = input.map((i) => i.split(" ") as [string, string]);
+const process = (input: Command[]) => {
   const visited: number[] = [];
 
   let pointer = 0;
@@ -53,7 +59,7 @@ const process = (input: string[]) => {
   let exitCode = 0;
 
   while (true) {
-    if (pointer < 0 || pointer >= commands.length) {
+    if (pointer < 0 || pointer >= input.length) {
       break;
     }
     if (visited.includes(pointer)) {
@@ -66,11 +72,7 @@ const process = (input: string[]) => {
       throw Error("Exceeded arbitrary maximum run time");
     }
     loops += 1;
-    [pointer, accumulator] = runCommand(
-      commands[pointer],
-      pointer,
-      accumulator
-    );
+    [pointer, accumulator] = runCommand(input[pointer], pointer, accumulator);
   }
 
   return [accumulator, exitCode];
@@ -97,19 +99,21 @@ solution.tests = async () => {
 solution.partTwo = async () => {
   const input = await getInput;
   for (let i = 0; i < input.length; i++) {
-    const cmd = input[i].split(" ")[0];
+    const { cmd } = input[i];
     const modifiedInput = input.slice();
     if (cmd === "nop") {
-      modifiedInput[i] = "jmp" + input[i].substr(3);
+      modifiedInput[i] = { ...input[i], cmd: "jmp" };
     } else if (cmd === "jmp") {
-      modifiedInput[i] = "nop" + input[i].substr(3);
+      modifiedInput[i] = { ...input[i], cmd: "nop" };
     }
     const [result, exitCode] = process(modifiedInput);
     if (exitCode === 0) {
       console.log(
-        `Program terminated normally with modification to line ${i + 1}: "${
-          input[i]
-        }" -> "${modifiedInput[i]}"`
+        `Program terminated normally with modification to line ${
+          i + 1
+        }: "${JSON.stringify(input[i])}" -> "${JSON.stringify(
+          modifiedInput[i]
+        )}"`
       );
       return result;
     }
