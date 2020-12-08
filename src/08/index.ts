@@ -18,7 +18,6 @@ const parse = (commands: string[]): Command[] => {
 };
 
 const getInput = readFileSeparated("\n", "08", "input").then(parse);
-const getInputFixed = readFileSeparated("\n", "08", "input-fixed").then(parse);
 const getTestInput = readFileSeparated("\n", "08", "input-test").then(parse);
 const getTestInput2 = readFileSeparated("\n", "08", "input-test-2").then(parse);
 
