@@ -51,7 +51,14 @@ const findContiguous = (values: number[], search: number) => {
   for (let i = 1; i < values.length; i++) {
     for (let j = 0; j < i; j++) {
       const subset = values.slice(j, i);
-      if (sum(...subset) === search) {
+      let sum = 0;
+      for (let k = 0; k < subset.length; k++) {
+        sum += subset[k];
+        if (sum > search) {
+          break;
+        }
+      }
+      if (sum === search) {
         return Math.min(...subset) + Math.max(...subset);
       }
     }
