@@ -42,83 +42,27 @@ const process = (adapters: number[]) => {
 };
 
 const processBranches = (adapters: number[]) => {
-  const sorted = [...adapters].sort((a, b) => a - b);
-  let combinations = 1;
+  const sorted = [0, ...adapters].sort((a, b) => a - b);
   let j = 1;
   const max = Math.max(...sorted);
-  while (j < max) {
-    const hasPlusOne = sorted.includes(j + 1);
-    const hasPlusTwo = sorted.includes(j + 2);
-    const hasPlusThree = sorted.includes(j + 3);
-    const num = [hasPlusOne, hasPlusTwo, hasPlusThree].filter((b) => b).length;
-    combinations += [1, 1, 2, 4][num];
-    j++;
-  }
   let s = "";
-  for (let i = 1; i < max; i++) {
-    s = s + (sorted.includes(i) ? ` ${i}` : "");
+  for (let i = 0; i <= max; i++) {
+    s = s + (sorted.includes(i) ? "1" : "0");
   }
-  console.log(s);
-  return combinations;
+  const sections = s.split("00");
+  // console.log("--");
+  // console.log(sections.filter((s) => s.length > 2).map((s) => s.slice(1)));
+  const combinations = sections
+    .filter((s) => s.length > 2)
+    .map((s) => {
+      const coms = [1, 1, 2, 4, 7, 13];
+      return coms[s.length - 1];
+    });
+  // console.log(combinations);
+  const total = combinations.reduce((sum, c) => sum * c, 1);
+  // console.log(total);
+  return total;
 };
-
-/*
-
-  1 0 0 1 1 1 1 0 0 1 1 1 0 0 1 1 0 0 (1)
-
-  1             7         4       2       1
-
-*/
-
-/*
-1 1 1 1 0 0 1 0 0 1 1 0 0 1 1 1 1 1 0 0 1 0 0 1 1 1 0 0 1 1 1 1 0 0 1 0 0 1 1 1 1 1 0 0 1 1 1 1 0
-1 1 1 1                         7
-        0 0 1                   1
-              0 0 1 1           2
-                      0 0 1 1 1 1 1                      13
-                                    0 0 1                 1
-                                          0 0 1 1 1                    4
-                                                    0 0 1 1 1 1        7
-                                                                0 0 1                               1
-                                                                      0 0 1 1 1 1 1                13
-                                                                                    0 0 1 1 1 1     7
-
-*/
-
-/*
-
-1 1 1 1 0 0 1 1 1 1 1 0 0 1 0 0 1 1 1 1 0 0 1 1 1 0 0 1 0 0 1 1 1 1 1 0 0 1 1 0 0 1 0 0 1 1 1 1
-
-        7             13    1           7         4     1             13      2     1           7
-
-*/
-
-/// 1 2 3 4
-/// 1     4
-/// 1   3 4
-/// 1 2   4
-//      3 4
-//    2 3 4
-//    2   4
-
-// 1 2 3
-// 1   3
-//   2 3
-//     3
-
-// 1 2 3 4 5   1
-// 1 2 3   5   1
-// 1 2   4 5
-// 1   3 4 5   2
-// 1   3   5
-// 1     4 5
-// 1 2     5   3
-//   2 3 4 5
-//   2   4 5
-//   2 3   5
-//   2     5   4
-//     3 4 5
-//     3   5
 
 const solution: Solution = async () => {
   const input = await getInput;
@@ -136,7 +80,7 @@ solution.tests = async () => {
 
 solution.partTwo = async () => {
   const input = await getInput;
-  return NaN;
+  return processBranches(input);
 };
 
 solution.inputs = [getInput, getTestInput];
