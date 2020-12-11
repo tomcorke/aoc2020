@@ -2,39 +2,22 @@ import { readFileSeparated, toNumber } from "../helpers";
 import { Solution } from "..";
 
 enum STATE {
-  Occupied = 1,
-  Empty = 0,
-  Floor = -1,
+  Occupied = "L",
+  Empty = "#",
+  Floor = ".",
 }
 
-type SeatRow = STATE[];
+type SeatRow = string[];
 type SeatMap = SeatRow[];
 
-const parse = (lines: string[]) => {
-  const charLines = lines.map((line) => line.split(""));
-  let seatMap: SeatMap = charLines.map((line) => {
-    return line.map((c) => {
-      switch (c) {
-        case "L":
-          return STATE.Empty;
-        case "#":
-          return STATE.Occupied;
-        case ".":
-          return STATE.Floor;
-        default:
-          throw Error(`Error mapping seat: "${line}" "${c}"`);
-      }
-    });
-  });
-  return seatMap;
+const parse = (lines: string[]): SeatMap => {
+  return lines.map((line) => line.split(""));
 };
 
 const getInput = readFileSeparated("\n", "11", "input").then(parse);
 const getTestInput = readFileSeparated("\n", "11", "input-test").then(parse);
 
 const getAdjacents = (seatMap: SeatMap, x: number, y: number) => {
-  const maxY = seatMap.length - 1;
-  const maxX = seatMap[0].length - 1;
   let checks: [number, number][] = [
     [-1, -1],
     [0, -1],
@@ -51,8 +34,6 @@ const getAdjacents = (seatMap: SeatMap, x: number, y: number) => {
 };
 
 const getVisibleAdjacents = (seatMap: SeatMap, x: number, y: number) => {
-  const maxY = seatMap.length - 1;
-  const maxX = seatMap[0].length - 1;
   let checks: [number, number][] = [
     [-1, -1],
     [0, -1],
@@ -102,22 +83,7 @@ const cloneSeatMap = (original: SeatMap) => {
 
 const prettyPrint = (seatMap: SeatMap) => {
   seatMap.forEach((row) => {
-    console.log(
-      row
-        .map((seat) => {
-          switch (seat) {
-            case STATE.Occupied:
-              return "L";
-            case STATE.Empty:
-              return "#";
-            case STATE.Floor:
-              return ".";
-            default:
-              return "_";
-          }
-        })
-        .join("")
-    );
+    console.log(row.join(""));
   });
   console.log("");
 };
