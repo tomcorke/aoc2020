@@ -22,6 +22,7 @@ const process = (input: string[]) => {
   if (minTime !== undefined && minBus !== undefined) {
     return minBus * minTime;
   }
+  throw Error("Could not find bus");
 };
 
 const process2 = (input: string[]) => {
@@ -30,19 +31,23 @@ const process2 = (input: string[]) => {
 
 const solution: Solution = async () => {
   const input = await getInput;
-
-  return NaN;
+  return process(input);
 };
 
 solution.tests = async () => {
   const testInput = await getTestInput;
   await expect(() => process(testInput), 295);
-  // await expect(() => process2(['', '']), -1);
+  await expect(() => process2(["", "17,x,13,19"]), 3417);
+  await expect(() => process2(["", "67,7,59,61"]), 754018);
+  await expect(() => process2(["", "67,x,7,59,61"]), 779210);
+  await expect(() => process2(["", "67,7,x,59,61"]), 1261476);
+  await expect(() => process2(["", "1789,37,47,1889"]), 1202161486);
+  await expect(() => process2(testInput), 1068781);
 };
 
 solution.partTwo = async () => {
   const input = await getInput;
-  return NaN;
+  return process2(input);
 };
 
 solution.inputs = [getInput, getTestInput];
