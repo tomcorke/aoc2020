@@ -43,6 +43,18 @@ export const toVector3 = (vectorString: string): Vector3 => {
   return {
     x: parseInt(match[1]),
     y: parseInt(match[2]),
-    z: parseInt(match[3])
+    z: parseInt(match[3]),
   };
+};
+
+export const expect = async <T>(
+  test: () => T | Promise<T>,
+  expected: T
+): Promise<void> => {
+  const actual = await test();
+  if (actual !== expected) {
+    throw Error(
+      `Test failed, expected result ${expected}, actual result ${actual}`
+    );
+  }
 };

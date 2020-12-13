@@ -36,6 +36,7 @@ const timeSolution = async <T>(func: () => T) => {
 
 (async () => {
   const day = args[0];
+  let mode = "initialisation";
   try {
     if (!solution) {
       throw Error("Solution not defined");
@@ -50,12 +51,14 @@ const timeSolution = async <T>(func: () => T) => {
     }
 
     if (typeof solution.tests === "function") {
+      mode = "tests";
       console.log("");
       console.log("Running tests...");
       const [_, testTime] = await timeSolution(solution.tests);
       console.log(`Completed in ${testTime}ms`);
     }
 
+    mode = "solution part one";
     console.log("");
     console.log(`Running day ${day} part one...`);
     const [result, partOneTime] = await timeSolution(solution);
@@ -64,6 +67,7 @@ const timeSolution = async <T>(func: () => T) => {
     console.log(`Completed in ${partOneTime}ms`);
 
     if (solution.partTwo) {
+      mode = "solution part two";
       console.log("");
       console.log(`Running day ${day} part two...`);
       const [partTwoResult, partTwoTime] = await timeSolution(solution.partTwo);
@@ -74,6 +78,6 @@ const timeSolution = async <T>(func: () => T) => {
 
     console.log("");
   } catch (e) {
-    console.error(`Error running solution for day ${day}:`, e);
+    console.error(`Error running ${mode} for day ${day}:`, e);
   }
 })();
