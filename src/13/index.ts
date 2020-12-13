@@ -26,7 +26,27 @@ const process = (input: string[]) => {
 };
 
 const process2 = (input: string[]) => {
-  return -1;
+  const buses = input[1]
+    .split(",")
+    .map((b, i) => ({ number: b === "x" ? -1 : parseInt(b), offset: i }))
+    .filter((b) => b.number !== -1);
+  const firstBus = buses[0];
+  const otherBuses = buses.slice(1);
+
+  let startTime = 0;
+  let loops = 0;
+  while (true) {
+    startTime += firstBus.number;
+    if (otherBuses.every((ob) => (startTime + ob.offset) % ob.number === 0)) {
+      return startTime;
+    }
+    loops++;
+    if (loops > 1000000) {
+      break;
+    }
+  }
+
+  throw Error("Could not find time in reasonable number of loops");
 };
 
 const solution: Solution = async () => {
