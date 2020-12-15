@@ -10,15 +10,11 @@ const process = (input: number[], limit: number = 2020): number => {
 
   let last = input[input.length - 1];
   let lastM = -1;
+
   for (let turn = input.length + 1; turn <= limit; turn++) {
-    const output = lastM > 0 ? turn - 1 - lastM : 0;
-    last = output;
+    last = lastM > 0 ? turn - 1 - lastM : 0;
     lastM = m.get(last) || 0;
     m.set(last, turn);
-  }
-
-  if (last === undefined) {
-    throw Error("No last number");
   }
 
   return last;
@@ -30,7 +26,7 @@ const solution: Solution = () => {
 };
 
 solution.tests = async () => {
-  await expect(() => process([0, 3, 6], 2020), 436);
+  await expect(() => process([0, 3, 6]), 436);
   expect(() => process([0, 3, 6], 30000000), 175594);
 };
 
