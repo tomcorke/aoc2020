@@ -2,31 +2,19 @@ import { readFileSeparated, toNumber, expect } from "../helpers";
 import { Solution } from "..";
 
 const process = (input: number[], limit: number = 2020): number => {
-  const mem: { [key: number]: number[] } = {};
+  const m = new Map<number, number>();
 
-  let last: number | undefined;
-  for (let turn = 1; turn <= 2020; turn++) {
-    if (turn <= input.length) {
-      last = input[turn - 1];
-      mem[last] = [turn];
-      // console.log(`Turn ${turn}: ${last}`);
-      continue;
-    }
-    let output: number;
-    if (last === undefined) {
-      throw Error("No last number");
-    }
-    const m = mem[last];
-    // console.log(`Checking for ${last}: ${m}`);
-    if (m === undefined || m.length === 1) {
-      output = 0;
-    } else {
-      output = m[0] - m[1];
-    }
-    // console.log(`Turn ${turn}: ${output}`);
-    const prev = mem[output] ? [mem[output][0]] : [];
-    mem[output] = [turn, ...prev];
+  for (let turn = 1; turn <= input.length; turn++) {
+    m.set(input[turn - 1], turn);
+  }
+
+  let last = input[input.length - 1];
+  let lastM = -1;
+  for (let turn = input.length + 1; turn <= limit; turn++) {
+    const output = lastM > 0 ? turn - 1 - lastM : 0;
     last = output;
+    lastM = m.get(last) || 0;
+    m.set(last, turn);
   }
 
   if (last === undefined) {
@@ -41,14 +29,13 @@ const solution: Solution = () => {
   return process(input);
 };
 
-solution.tests = () => {
-  expect(() => process([0, 3, 6]), 436);
-  // expect(() => process([0, 3, 6], 30000000), 175594);
+solution.tests = async () => {
+  await expect(() => process([0, 3, 6], 2020), 436);
+  expect(() => process([0, 3, 6], 30000000), 175594);
 };
 
 solution.partTwo = () => {
   const input = [2, 0, 1, 9, 5, 19];
-  return -1;
   return process(input, 30000000);
 };
 
