@@ -51,6 +51,19 @@ const process = (inputs: string[]) => {
   return Object.values(memory).reduce((sum, value) => sum + value, 0);
 };
 
+const permutMask = (mask: string[]): string[][] => {
+  const i = mask.indexOf("X");
+  if (i > -1) {
+    mask[i] = "1";
+    const withOne = mask.slice();
+    mask[i] = "0";
+    const withZero = mask.slice();
+    return [...permutMask(withOne), ...permutMask(withZero)];
+  } else {
+    return [mask];
+  }
+};
+
 const applyMasks2 = (
   value: number,
   orMask: number,
@@ -58,23 +71,11 @@ const applyMasks2 = (
 ): number[] => {
   const fixedValue = (BigInt(value) | BigInt(orMask)) & ~BigInt(wildMask);
 
-  console.log(fixedValue.toString(2).padStart(36, "0"));
-
-  let wildValues: bigint[] = [];
-  const bigWildMask = BigInt(wildMask);
-
-  console.log("generating wild values");
-  for (let i = 0; i <= wildMask; i++) {
-    wildValues.push(BigInt(i) & bigWildMask);
-  }
-
-  /*
-  Array.from(new Set(wildValues)).forEach((w) => {
-    console.log(w.toString(2).padStart(36, "_"));
-  });
-  */
-  console.log("generating masked values");
-  return Array.from(new Set(wildValues.map((w) => Number(w | fixedValue))));
+  const wildMasks = permutMask(
+    wildMask.toString(2).replace(/1/g, "X").split("")
+  );
+  const wildValues = wildMasks.map((m) => parseInt(m.join(""), 2));
+  return wildValues.map((w) => Number(BigInt(w) | fixedValue));
 };
 
 const process2 = (inputs: string[]) => {
@@ -99,16 +100,11 @@ const process2 = (inputs: string[]) => {
         .join("");
       positiveMaskValue = parseInt(positiveMaskString, 2);
       wildMaskValue = parseInt(wildMaskString, 2);
-      console.log("");
-      console.log(maskString);
     } else {
       if (positiveMaskValue === undefined || wildMaskValue === undefined) {
         throw Error("Expected to have masks!");
       }
       const assignmentString = line.match(/^mem\[(\d+)\] = (\d+)$/)!;
-
-      console.log("");
-      console.log(line);
 
       const [, addressString, valueString] = assignmentString;
       const originalAddressValue = parseInt(addressString);
@@ -118,9 +114,6 @@ const process2 = (inputs: string[]) => {
         positiveMaskValue,
         wildMaskValue
       );
-      console.log("");
-      console.log(originalAddressValue.toString(2).padStart(36, "0"), "value");
-      console.log(_maskString, "mask");
       addressValues.forEach((addressValue) => {
         /*
         console.log(
