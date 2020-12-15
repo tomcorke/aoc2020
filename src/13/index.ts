@@ -34,19 +34,33 @@ const process2 = (input: string[]) => {
   const otherBuses = buses.slice(1);
 
   let startTime = 0;
+  let timeIter = firstBus.number;
+
   let loops = 0;
   while (true) {
-    startTime += firstBus.number;
+    startTime += timeIter;
+    const iterParts = [firstBus.number];
+    for (let ob of otherBuses) {
+      if ((startTime + ob.offset) % ob.number === 0) {
+        iterParts.push(ob.number);
+        const mul = iterParts.reduce((sum, p) => sum * p, 1);
+        if (mul > timeIter) {
+          timeIter = mul;
+        }
+      } else {
+        break;
+      }
+    }
     if (otherBuses.every((ob) => (startTime + ob.offset) % ob.number === 0)) {
       return startTime;
     }
     loops++;
-    if (loops > 1000000) {
+    if (loops > 100000) {
       break;
     }
   }
 
-  throw Error("Could not find time in reasonable number of loops");
+  throw Error("Could not find answer in reasonable time");
 };
 
 const solution: Solution = async () => {
@@ -57,12 +71,12 @@ const solution: Solution = async () => {
 solution.tests = async () => {
   const testInput = await getTestInput;
   await expect(() => process(testInput), 295);
+  await expect(() => process2(testInput), 1068781);
   await expect(() => process2(["", "17,x,13,19"]), 3417);
   await expect(() => process2(["", "67,7,59,61"]), 754018);
   await expect(() => process2(["", "67,x,7,59,61"]), 779210);
   await expect(() => process2(["", "67,7,x,59,61"]), 1261476);
   await expect(() => process2(["", "1789,37,47,1889"]), 1202161486);
-  await expect(() => process2(testInput), 1068781);
 };
 
 solution.partTwo = async () => {
