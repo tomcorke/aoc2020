@@ -1,4 +1,10 @@
-import { readFileSeparated, toNumber, expect } from "../helpers";
+import {
+  readFile,
+  readFileLines,
+  readFileSeparated,
+  toNumber,
+  expect,
+} from "../helpers";
 import { Solution } from "..";
 
 const getInput = readFileSeparated("\n", "xx", "input").then(
