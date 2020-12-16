@@ -56,7 +56,10 @@ const process = (input: string) => {
   return sumOver(invalidTicketValues, (t) => t);
 };
 
-const process2 = (input: string) => {
+const process2 = (
+  input: string,
+  ruleFilter: (rule: Rule) => boolean = (r) => true
+) => {
   const { rules, ticket, otherTickets } = parse(input);
 
   const validTickets = otherTickets.filter((t) =>
@@ -97,7 +100,7 @@ const process2 = (input: string) => {
   const matchingRules = possibleRules.map((pr) => pr[0]);
 
   const answer = matchingRules.reduce((sum, rule, i) => {
-    if (rule.name.startsWith("departure")) {
+    if (ruleFilter(rule)) {
       // console.log(`${rule.name} (${i}): ${ticket[i]}`);
       return sum * ticket[i];
     }
@@ -116,12 +119,12 @@ solution.tests = async () => {
   const testInput = await getTestInput;
   const testInput2 = await getTestInput2;
   await expect(() => process(testInput), 71);
-  // await expect(() => process2(testInput2), 12 * 11 * 13);
+  await expect(() => process2(testInput2), 12 * 11 * 13);
 };
 
 solution.partTwo = async () => {
   const input = await getInput;
-  return process2(input);
+  return process2(input, (rule) => rule.name.startsWith("departure"));
 };
 
 solution.inputs = [getInput, getTestInput, getTestInput2];
