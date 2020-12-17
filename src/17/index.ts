@@ -61,8 +61,8 @@ export class HyperGrid<T> {
   private data = new Map<number, T>();
 
   constructor(dimensions: number, defaultValue: T) {
-    if (dimensions <= 0) {
-      throw Error("Dimensions must be greater than or equal to zero");
+    if (dimensions < 1) {
+      throw Error("Dimensions must be greater than or equal to one");
     }
     this.dimensions = dimensions;
     this.defaultValue = defaultValue;
