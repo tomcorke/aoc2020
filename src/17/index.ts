@@ -33,6 +33,23 @@ export const getRange = (
   return range;
 };
 
+export const getRangeGen = function* (
+  dimensions: number,
+  min: number,
+  max: number
+): IterableIterator<number[]> {
+  for (let i = min; i <= max; i++) {
+    if (dimensions > 1) {
+      const subRanges = getRangeGen(dimensions - 1, min, max);
+      for (let range of subRanges) {
+        yield [i, ...range];
+      }
+    } else {
+      yield [i];
+    }
+  }
+};
+
 export const getDimensionalRange = (
   dimensions: number,
   min: number[],
@@ -108,16 +125,21 @@ export class HyperGrid<T> {
     }
   }
 
-  *getAdjacents(coords: number[]) {
+  *getAdjacentCoords(coords: number[]) {
     if (coords.length < this.dimensions) {
       throw Error("Coords length must match dimensions");
     }
-    const deltas = getRange(this.dimensions, -1, 1).filter(
-      (d) => !d.every((n) => n === 0)
-    );
-    const results: T[] = [];
+    const deltas = getRangeGen(this.dimensions, -1, 1);
     for (let delta of deltas) {
-      yield this.get(addArrays(coords, delta));
+      if (delta.some((n) => n !== 0)) {
+        yield addArrays(coords, delta);
+      }
+    }
+  }
+
+  *getAdjacents(coords: number[]) {
+    for (const point of this.getAdjacentCoords(coords)) {
+      yield this.get(point);
     }
   }
 
@@ -137,6 +159,21 @@ export class HyperGrid<T> {
       }
     }
     return count;
+  }
+
+  makeNeighboursGrid(selector: (value: T | undefined) => boolean) {
+    const ag = new HyperGrid<number>(this.dimensions, 0);
+    const [min, max] = this.getBounds();
+    const points = getDimensionalRange(this.dimensions, min, max);
+    for (const point of points) {
+      if (selector(this.get(point))) {
+        const adjacents = this.getAdjacentCoords(point);
+        for (const a of adjacents) {
+          ag.set(a, ag.get(a) + 1);
+        }
+      }
+    }
+    return ag;
   }
 
   count(selector: (value: T | undefined) => boolean): number {
@@ -255,10 +292,11 @@ const process = (input: string[], dimensions: number, cycles: number) => {
   for (let cycle = 0; cycle < cycles; cycle++) {
     const newGrid = grid.clone();
     const [min, max] = grid.getOuterBounds();
+    const neighbours = grid.makeNeighboursGrid((c) => c === true);
     const points = getDimensionalRange(grid.getDimensions(), min, max);
     points.forEach((p) => {
       const state = grid.get(p);
-      const adjacents = grid.countAdjacents(p, (c) => c === true, 4);
+      const adjacents = neighbours.get(p);
       if (state === true && adjacents !== 2 && adjacents !== 3) {
         newGrid.set(p, false);
       } else if (state === false && adjacents === 3) {
