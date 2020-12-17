@@ -55,8 +55,8 @@ const getDimensionalRange = (
 class HyperGrid<T> {
   private dimensions: number;
   private defaultValue: T;
-  private subGrids: { [index: number]: HyperGrid<T> } = {};
-  private data: { [index: number]: T | undefined } = {};
+  private subGrids = new Map<number, HyperGrid<T>>();
+  private data = new Map<number, T>();
 
   constructor(dimensions: number, defaultValue: T) {
     if (dimensions <= 0) {
@@ -76,16 +76,16 @@ class HyperGrid<T> {
     }
     const i = coords[0];
     if (this.dimensions > 1) {
-      if (!this.subGrids[i]) {
-        this.subGrids[i] = new HyperGrid<T>(
-          this.dimensions - 1,
-          this.defaultValue
+      if (!this.subGrids.has(i)) {
+        this.subGrids.set(
+          i,
+          new HyperGrid<T>(this.dimensions - 1, this.defaultValue)
         );
       }
-      this.subGrids[i].set(coords.slice(1), value);
+      this.subGrids.get(i)!.set(coords.slice(1), value);
     } else {
-      if (this.data[i] !== undefined || value !== this.defaultValue) {
-        this.data[i] = value;
+      if (this.data.get(i) !== undefined || value !== this.defaultValue) {
+        this.data.set(i, value);
       }
     }
   }
@@ -96,12 +96,13 @@ class HyperGrid<T> {
     }
     const i = coords[0];
     if (this.dimensions > 1) {
-      if (this.subGrids[i]) {
-        return this.subGrids[i].get(coords.slice(1));
+      if (this.subGrids.has(i)) {
+        return this.subGrids.get(i)!.get(coords.slice(1));
       }
       return this.defaultValue;
     } else {
-      return this.data[i] || this.defaultValue;
+      const data = this.data.get(i);
+      return data !== undefined ? data : this.defaultValue;
     }
   }
 
@@ -121,12 +122,12 @@ class HyperGrid<T> {
 
   count(selector: (value: T | undefined) => boolean): number {
     if (this.dimensions > 1) {
-      return Object.values(this.subGrids).reduce(
+      return Array.from(this.subGrids.values()).reduce(
         (sum, sg) => sum + sg.count(selector),
         0
       );
     } else {
-      return Object.values(this.data).filter(selector).length;
+      return Array.from(this.data.values()).filter(selector).length;
     }
   }
 
@@ -135,7 +136,7 @@ class HyperGrid<T> {
     const min = Math.min(...keys);
     const max = Math.max(...keys);
     if (this.dimensions > 1) {
-      const subGridBounds = Object.values(this.subGrids).map((sg) =>
+      const subGridBounds = Array.from(this.subGrids.values()).map((sg) =>
         sg.getBounds()
       );
       const [
@@ -176,21 +177,21 @@ class HyperGrid<T> {
 
   keys(): number[] {
     if (this.dimensions > 1) {
-      return Object.keys(this.subGrids).map((k) => parseInt(k));
+      return Array.from(this.subGrids.keys());
     } else {
-      return Object.keys(this.data).map((k) => parseInt(k));
+      return Array.from(this.data.keys());
     }
   }
 
   clone(): HyperGrid<T> {
     const newGrid = new HyperGrid<T>(this.dimensions, this.defaultValue);
     if (this.dimensions > 1) {
-      for (let k of this.keys()) {
-        newGrid.subGrids[k] = this.subGrids[k].clone();
+      for (let [k, v] of this.subGrids.entries()) {
+        newGrid.subGrids.set(k, v.clone());
       }
     } else {
-      for (let k of this.keys()) {
-        newGrid.data[k] = this.data[k];
+      for (let [k, v] of this.data.entries()) {
+        newGrid.data.set(k, v);
       }
     }
     return newGrid;
