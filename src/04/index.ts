@@ -84,7 +84,7 @@ const countValidPassports = (
       if (!withValidation) return true;
       const valid = FIELD_VALIDATORS[key]?.(p[key]);
       if (!valid) {
-        console.log("Invalid field in passport", key, p[key]);
+        // console.log("Invalid field in passport", key, p[key]);
       }
       return valid;
     })
