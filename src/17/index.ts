@@ -11,46 +11,209 @@ const getInput = readFileSeparated("\n", "17", "input");
 
 type Grid = string[][][];
 
+const add = (a: number[], b: number[]) => {
+  if (a.length !== b.length) {
+    throw Error("Mismatched array length");
+  }
+  return a.map((an, i) => an + b[i]);
+};
+
+const getRange = (dimensions: number, min: number, max: number): number[][] => {
+  const range: number[][] = [];
+  for (let i = min; i <= max; i++) {
+    if (dimensions > 1) {
+      const subRanges = getRange(dimensions - 1, min, max);
+      subRanges.forEach((sr) => range.push([i, ...sr]));
+    } else {
+      range.push([i]);
+    }
+  }
+  return range;
+};
+
+const getDimensionalRange = (
+  dimensions: number,
+  min: number[],
+  max: number[]
+): number[][] => {
+  const range: number[][] = [];
+  for (let i = min[0]; i <= max[0]; i++) {
+    if (dimensions > 1) {
+      const subRanges = getDimensionalRange(
+        dimensions - 1,
+        min.slice(1),
+        max.slice(1)
+      );
+      subRanges.forEach((sr) => range.push([i, ...sr]));
+    } else {
+      range.push([i]);
+    }
+  }
+  return range;
+};
+
 class HyperGrid<T> {
   private dimensions: number;
   private defaultValue: T;
-  private grid: { [index: number]: HyperGrid<T> } = {};
-  private gridData: { [index: number]: T } = {};
+  private subGrids: { [index: number]: HyperGrid<T> } = {};
+  private data: { [index: number]: T | undefined } = {};
+
   constructor(dimensions: number, defaultValue: T) {
+    if (dimensions <= 0) {
+      throw Error("Dimensions must be greater than or equal to zero");
+    }
     this.dimensions = dimensions;
     this.defaultValue = defaultValue;
   }
+
+  getDimensions() {
+    return this.dimensions;
+  }
+
   set(coords: number[], value: T) {
     if (coords.length < this.dimensions) {
       throw Error("Coords length must match dimensions");
     }
     const i = coords[0];
     if (this.dimensions > 1) {
-      if (!this.grid[i]) {
-        this.grid[i] = new HyperGrid<T>(this.dimensions - 1, this.defaultValue);
+      if (!this.subGrids[i]) {
+        this.subGrids[i] = new HyperGrid<T>(
+          this.dimensions - 1,
+          this.defaultValue
+        );
       }
-      this.grid[i].set(coords.slice(1), value);
+      this.subGrids[i].set(coords.slice(1), value);
     } else {
-      this.gridData[i] = value;
+      if (this.data[i] !== undefined || value !== this.defaultValue) {
+        this.data[i] = value;
+      }
     }
   }
+
   get(coords: number[]): T {
     if (coords.length < this.dimensions) {
       throw Error("Coords length must match dimensions");
     }
     const i = coords[0];
     if (this.dimensions > 1) {
-      if (this.grid[i]) {
-        return this.grid[i].get(coords.slice(1));
+      if (this.subGrids[i]) {
+        return this.subGrids[i].get(coords.slice(1));
       }
       return this.defaultValue;
     } else {
-      return this.gridData[i] || this.defaultValue;
+      return this.data[i] || this.defaultValue;
     }
   }
+
   getAdjacents(coords: number[]) {
     if (coords.length < this.dimensions) {
       throw Error("Coords length must match dimensions");
+    }
+    const deltas = getRange(this.dimensions, -1, 1).filter(
+      (d) => !d.every((n) => n === 0)
+    );
+    return deltas.map((delta) => this.get(add(coords, delta)));
+  }
+
+  countAdjacents(coords: number[], selector: (value: T) => boolean) {
+    return this.getAdjacents(coords).filter(selector).length;
+  }
+
+  count(selector: (value: T | undefined) => boolean): number {
+    if (this.dimensions > 1) {
+      return Object.values(this.subGrids).reduce(
+        (sum, sg) => sum + sg.count(selector),
+        0
+      );
+    } else {
+      return Object.values(this.data).filter(selector).length;
+    }
+  }
+
+  getBounds(): number[][] {
+    const keys = this.keys();
+    const min = Math.min(...keys);
+    const max = Math.max(...keys);
+    if (this.dimensions > 1) {
+      const subGridBounds = Object.values(this.subGrids).map((sg) =>
+        sg.getBounds()
+      );
+      const [
+        minSubGridBounds,
+        maxSubGridBounds,
+      ]: number[][] = subGridBounds.reduce(([minB, maxB], [minSGB, maxSGB]) => {
+        return [
+          minSGB.map((sgb, i) =>
+            Math.min(minB?.[i] !== undefined ? minB?.[i] : sgb, sgb)
+          ),
+          maxSGB.map((sgb, i) =>
+            Math.max(maxB?.[i] !== undefined ? maxB?.[i] : sgb, sgb)
+          ),
+        ];
+      }, []);
+      return [
+        [min, ...minSubGridBounds],
+        [max, ...maxSubGridBounds],
+      ];
+    } else {
+      return [[min], [max]];
+    }
+  }
+
+  getOuterBounds(): number[][] {
+    const [min, max] = this.getBounds();
+    const outerMin = min.map((m) => m - 1);
+    const outerMax = max.map((m) => m + 1);
+    return [outerMin, outerMax];
+  }
+
+  getSize(): number[] {
+    const [min, max] = this.getBounds();
+    let size: number[] = [];
+    max.forEach((m, i) => size.push(m - min[i]));
+    return size;
+  }
+
+  keys(): number[] {
+    if (this.dimensions > 1) {
+      return Object.keys(this.subGrids).map((k) => parseInt(k));
+    } else {
+      return Object.keys(this.data).map((k) => parseInt(k));
+    }
+  }
+
+  clone(): HyperGrid<T> {
+    const newGrid = new HyperGrid<T>(this.dimensions, this.defaultValue);
+    if (this.dimensions > 1) {
+      for (let k of this.keys()) {
+        newGrid.subGrids[k] = this.subGrids[k].clone();
+      }
+    } else {
+      for (let k of this.keys()) {
+        newGrid.data[k] = this.data[k];
+      }
+    }
+    return newGrid;
+  }
+
+  prettyPrint() {
+    if (this.dimensions > 3) {
+      console.warn("No pretty printing above 3 dimensions");
+      return;
+    }
+
+    const [min, max] = this.getOuterBounds();
+
+    console.log(min, max);
+    for (let z = min[0]; z <= max[0]; z++) {
+      for (let y = min[1]; y <= max[1]; y++) {
+        const line: string[] = [];
+        for (let x = min[2]; x <= max[2]; x++) {
+          line.push(this.get([z, y, x]) ? "#" : ".");
+        }
+        console.log(line.join(""));
+      }
+      console.log("");
     }
   }
 }
@@ -64,6 +227,16 @@ const prettyPrint = (grid: Grid) => {
   }
   console.log("-");
   console.log("");
+};
+
+const flatPrint = (grid: Grid) => {
+  let values: string[] = [];
+  for (let z of grid) {
+    for (let y of z) {
+      values.push(y.join(""));
+    }
+  }
+  console.log(values.join(""));
 };
 
 const clone = (grid: Grid): Grid => {
@@ -189,12 +362,58 @@ const process = (input: string[], cycles: number = 6) => {
     grid = newGridClone;
     // console.log(`After cycle ${i + 1}:`);
     // prettyPrint(grid);
+    // flatPrint(grid);
   }
   return grid.reduce(
     (zsum, y) =>
       zsum + y.reduce((ysum, x) => ysum + x.filter((c) => c === "#").length, 0),
     0
   );
+};
+
+const splitLen = <T>(a: T[], len: number): T[][] => {
+  let result: T[][] = [];
+  const ac = a.slice();
+  while (ac.length > 0) {
+    result.push(ac.splice(0, len));
+  }
+  return result;
+};
+
+const process2 = (input: string[], dimensions: number, cycles: number) => {
+  let grid = new HyperGrid<boolean>(dimensions, false);
+
+  // Initialise with 2-dimensional data;
+  input.forEach((line, y) => {
+    line.split("").forEach((c, x) => {
+      const coords = new Array(dimensions);
+      coords.fill(0);
+      coords[dimensions - 2] = y;
+      coords[dimensions - 1] = x;
+      grid.set(coords, c === "#");
+    });
+  });
+
+  for (let cycle = 0; cycle < cycles; cycle++) {
+    const newGrid = grid.clone();
+    const [min, max] = grid.getOuterBounds();
+    const points = getDimensionalRange(grid.getDimensions(), min, max);
+    points.forEach((p) => {
+      const state = grid.get(p);
+      const adjacents = grid.countAdjacents(p, (c) => c === true);
+      if (state === true && adjacents !== 2 && adjacents !== 3) {
+        newGrid.set(p, false);
+      } else if (state === false && adjacents === 3) {
+        newGrid.set(p, true);
+      }
+    });
+    grid = newGrid;
+    // const gd = points.map((p) => (grid.get(p) ? "#" : "."));
+    // console.log(`After cycle ${cycle + 1}:`);
+    // grid.prettyPrint();
+  }
+
+  return grid.count((c) => c === true);
 };
 
 const solution: Solution = async () => {
@@ -206,12 +425,27 @@ solution.tests = async () => {
   const testInput = `.#.
 ..#
 ###`.split("\n");
+
+  /*
+  console.log("");
+  await expect(() => process(testInput, 1), 11);
+  await expect(() => process2(testInput, 3, 1), 11);
+  */
+
+  console.log("");
+  await expect(() => process(testInput, 2), 21);
+  await expect(() => process2(testInput, 3, 2), 21);
+
+  console.log("");
   await expect(() => process(testInput, 6), 112);
+  await expect(() => process2(testInput, 3, 6), 112);
+
+  await expect(() => process2(testInput, 4, 6), 848);
 };
 
 solution.partTwo = async () => {
   const input = await getInput;
-  return NaN;
+  return process2(input, 4, 6);
 };
 
 solution.inputs = [getInput];

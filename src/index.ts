@@ -45,6 +45,18 @@ const timeSolution = async <T>(func: () => T) => {
       throw Error("Solution is not a function");
     }
 
+    if (args.includes("--wait")) {
+      console.log('Pausing with "--wait", press any key to continue...');
+      await new Promise<void>((resolve) => {
+        process.stdin.setRawMode && process.stdin.setRawMode(true);
+        process.stdin.resume();
+        process.stdin.on("data", () => {
+          process.stdin.setRawMode && process.stdin.setRawMode(false);
+          resolve();
+        });
+      });
+    }
+
     if (solution.inputs) {
       console.log("Waiting for async inputs to resolve...");
       await Promise.all(solution.inputs);
