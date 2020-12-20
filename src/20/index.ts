@@ -1,11 +1,6 @@
-import {
-  readFile,
-  readFileLines,
-  readFileSeparated,
-  toNumber,
-  expect,
-  toVector3,
-} from "../helpers";
+import * as fs from "fs";
+
+import { readFile, expect } from "../helpers";
 import { Solution } from "..";
 
 const getInput = readFile("20", "input");
@@ -21,6 +16,37 @@ const parseAsBinary = (value: string) =>
       .join(""),
     2
   );
+
+const stringSquareFlipH = (lines: string[]) => {
+  if (!lines.every((line) => line.length === lines.length)) {
+    throw Error("Must be square");
+  }
+  return lines.map((line) => reverse(line));
+};
+
+const stringSquareFlipV = (lines: string[]) => {
+  if (!lines.every((line) => line.length === lines.length)) {
+    throw Error("Must be square");
+  }
+  return lines.slice().reverse();
+};
+
+const stringSquareRot = (lines: string[]) => {
+  if (!lines.every((line) => line.length === lines.length)) {
+    throw Error("Must be square");
+  }
+  const size = lines[0].length;
+  const la = lines.map((l) => l.split(""));
+  const rl: string[] = [];
+  for (let y = 0; y < size; y++) {
+    const l: string[] = [];
+    for (let x = 0; x < size; x++) {
+      l.push(la[size - x - 1][y]);
+    }
+    rl.push(l.join(""));
+  }
+  return rl;
+};
 
 class Tile {
   tileGroup: TileGroup | undefined;
@@ -56,11 +82,12 @@ class Tile {
   }
   rot() {
     const la = this.lines.map((l) => l.split(""));
+    const size = this.lines[0].length;
     const rl: string[] = [];
-    for (let y = 0; y < 10; y++) {
+    for (let y = 0; y < size; y++) {
       const l: string[] = [];
-      for (let x = 0; x < 10; x++) {
-        l.push(la[9 - x][y]);
+      for (let x = 0; x < size; x++) {
+        l.push(la[size - x - 1][y]);
       }
       rl.push(l.join(""));
     }
@@ -246,7 +273,84 @@ const process2 = (input: string) => {
     return NaN;
   }
 
-  return -1;
+  const trimmedTileGrid = grid.map((row) =>
+    row.map((cell) =>
+      cell?.lines
+        .slice(1, cell.lines.length - 1)
+        .map((line) => line.substring(1, line.length - 1))
+    )
+  );
+
+  const ttg: string[] = [];
+  trimmedTileGrid.forEach((row, ri) => {
+    const firstCell = row[0]!;
+    for (let i = 0; i < firstCell.length; i++) {
+      ttg.push(row.map((cell) => cell![i]).join(""));
+    }
+  });
+
+  const SEA_MONSTER = [
+    "                  # ",
+    "#    ##    ##    ###",
+    " #  #  #  #  #  #   ",
+  ];
+
+  const seaMonsterCoords = SEA_MONSTER.flatMap((row, y) => {
+    const xC: number[][] = [];
+    for (let x = 0; x < row.length; x++) {
+      if (SEA_MONSTER[y][x] === "#") {
+        xC.push([x, y]);
+      }
+    }
+    return xC;
+  });
+
+  const seaMonsterWidth = SEA_MONSTER[0].length;
+  const seaMonsterHeight = SEA_MONSTER.length;
+
+  let found = 0;
+  let mod_ttg = ttg;
+  let flipOrRot = 0;
+
+  let ops = 0;
+
+  while (found === 0 && ops < 8) {
+    for (let y = 0; y < ttg.length - seaMonsterHeight; y++) {
+      for (let x = 0; x < ttg[0].length - seaMonsterWidth; x++) {
+        if (
+          seaMonsterCoords.every(([dx, dy]) => {
+            return mod_ttg[y + dy][x + dx] === "#";
+          })
+        ) {
+          found += 1;
+          seaMonsterCoords.forEach(([dx, dy]) => {
+            const line = mod_ttg[y + dy].split("");
+            line[x + dx] = "O";
+            mod_ttg[y + dy] = line.join("");
+          });
+        }
+      }
+    }
+    if (found === 0) {
+      if (flipOrRot === 0) {
+        mod_ttg = stringSquareRot(mod_ttg);
+      } else {
+        mod_ttg = stringSquareFlipH(mod_ttg);
+      }
+      flipOrRot = 1 - flipOrRot;
+      ops += 1;
+    }
+  }
+
+  // fs.writeFileSync("sea.txt", mod_ttg.join("\n"));
+
+  console.log(`Found ${found} sea monsters!`);
+  const total = ttg.reduce(
+    (sum, row) => sum + row.split("").filter((c) => c === "#").length,
+    0
+  );
+  console.log(`Sea roughness: ${total} - ${found * seaMonsterCoords.length}`);
+  return total; // - found * seaMonsterCoords.length;
 };
 
 const solution: Solution = async () => {
