@@ -28,6 +28,7 @@ export const readFileLines = async (...pathParts: string[]) => {
 };
 
 export const toNumber = (s: string) => parseFloat(s);
+export const toInteger = (s: string) => parseInt(s);
 
 export interface Vector3 {
   x: number;
